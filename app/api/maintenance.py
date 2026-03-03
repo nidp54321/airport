@@ -12,21 +12,19 @@ from app.crud import (
     update_maintenance,
     delete_maintenance
 )
-from app.api.users import get_current_user
-from app.models import User
 
 router = APIRouter()
 
 
 # Get all maintenance records
 @router.get("/", response_model=list[MaintenanceOut])
-def list_maintenance(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def list_maintenance(db: Session = Depends(get_db)):
     return get_all_maintenance(db)
 
 
 # Get maintenance by ID
 @router.get("/{maintenance_id}", response_model=MaintenanceOut)
-def get_maintenance(maintenance_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def get_maintenance(maintenance_id: int, db: Session = Depends(get_db)):
     maintenance = get_maintenance_by_id(db, maintenance_id)
     if not maintenance:
         raise HTTPException(status_code=404, detail="Maintenance record not found")
@@ -38,7 +36,6 @@ def get_maintenance(maintenance_id: int, db: Session = Depends(get_db), current_
 def get_maintenance_by_asset_route(
     asset_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
 ):
     maintenance = get_maintenance_by_asset(db, asset_id)
     if not maintenance:
@@ -51,7 +48,6 @@ def get_maintenance_by_asset_route(
 def get_maintenance_by_status_route(
     status: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
 ):
     maintenance = get_maintenance_by_status(db, status)
     if not maintenance:
@@ -64,7 +60,6 @@ def get_maintenance_by_status_route(
 def get_maintenance_assigned_route(
     user_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
 ):
     maintenance = get_maintenance_by_assigned_user(db, user_id)
     if not maintenance:
@@ -77,10 +72,7 @@ def get_maintenance_assigned_route(
 def create_new_maintenance(
     maintenance: MaintenanceCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
 ):
-    if current_user.role not in ["admin", "manager"]:
-        raise HTTPException(status_code=403, detail="Permission denied")
     return create_maintenance(db, maintenance)
 
 
@@ -90,11 +82,7 @@ def update_maintenance_route(
     maintenance_id: int,
     maintenance_data: MaintenanceUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
 ):
-    if current_user.role not in ["admin", "manager", "technician"]:
-        raise HTTPException(status_code=403, detail="Permission denied")
-
     db_maintenance = get_maintenance_by_id(db, maintenance_id)
     if not db_maintenance:
         raise HTTPException(status_code=404, detail="Maintenance record not found")
@@ -107,15 +95,10 @@ def update_maintenance_route(
 def delete_maintenance_route(
     maintenance_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
 ):
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Only admins can delete maintenance records")
-
     db_maintenance = get_maintenance_by_id(db, maintenance_id)
     if not db_maintenance:
         raise HTTPException(status_code=404, detail="Maintenance record not found")
 
     delete_maintenance(db, maintenance_id)
     return {"message": "Maintenance record deleted successfully"}
-

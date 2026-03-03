@@ -25,10 +25,25 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(auth.router, prefix="/auth", tags=["auth"])
+app.include_router(auth.router, prefix="/auth", tags=["authentication"])
 app.include_router(users.router, prefix="/users", tags=["users"])
 app.include_router(assets.router, prefix="/assets", tags=["assets"])
 app.include_router(locations.router, prefix="/locations", tags=["locations"])
 app.include_router(maintenance.router, prefix="/maintenance", tags=["maintenance"])
 app.include_router(reports.router, prefix="/reports", tags=["reports"])
+
+# ========================
+# Root Health Check Endpoints
+# ========================
+
+@app.get("/")
+def root():
+    """Root endpoint - API is running"""
+    return {"message": "Airport Assets Management API", "status": "operational"}
+
+@app.get("/health")
+def health_check():
+    """Health check endpoint"""
+    return {"status": "healthy", "service": "Airport API"}
+
 

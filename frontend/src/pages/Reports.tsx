@@ -1,9 +1,9 @@
-import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import "../styles.css";
+import NavigationPanel from "../components/NavigationPanel.tsx";
 
-const API = "http://127.0.0.1:8000";
+const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
 interface Report {
     id: number;
@@ -14,11 +14,9 @@ interface Report {
 }
 
 export default function Reports() {
-    const navigate = useNavigate();
     const [reports, setReports] = useState<Report[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-    const token = localStorage.getItem("token");
 
     useEffect(() => {
         fetchReports();
@@ -28,9 +26,7 @@ export default function Reports() {
         try {
             setLoading(true);
             setError("");
-            const response = await axios.get(`${API}/reports/`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const response = await axios.get(`${API}/reports/`);
             setReports(response.data);
         } catch (err) {
             console.error("Error fetching reports:", err);
@@ -40,34 +36,13 @@ export default function Reports() {
         }
     };
 
-    const logout = () => {
-        localStorage.removeItem("token");
-        navigate("/");
-    };
-
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString();
     };
 
     return (
         <div className="dashboard-container">
-            {/* Sidebar */}
-            <div className="dashboard-sidebar">
-                <h3>Airport Assets</h3>
-
-                <p onClick={() => navigate("/dashboard")}>Dashboard</p>
-                <p onClick={() => navigate("/assets")}>All Assets</p>
-                <p onClick={() => navigate("/locations")}>Locations</p>
-                <p onClick={() => navigate("/maintenance")}>Maintenance</p>
-                <p><strong>Reports</strong></p>
-                <p onClick={() => navigate("/users")}>User Management</p>
-
-                <button className="dashboard-logout-btn" onClick={logout}>
-                    Logout
-                </button>
-            </div>
-
-            {/* Main Content */}
+            <NavigationPanel />
             <div className="dashboard-main">
                 <h1>Reports</h1>
                 <p>View analytics and system reports</p>

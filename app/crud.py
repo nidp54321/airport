@@ -1,6 +1,5 @@
 from sqlalchemy.orm import Session
 from app.models import User, Asset, Location, Maintenance, Report
-from app.auth import get_password_hash, verify_password
 
 # ========================
 # User CRUD Operations
@@ -19,13 +18,13 @@ def get_all_users(db: Session):
 
 
 def create_user(db: Session, user_data):
-    hashed_password = get_password_hash(user_data.password)
     db_user = User(
         username=user_data.username,
         email=getattr(user_data, "email", None),
-        hashed_password=hashed_password,
+        password=user_data.password,  # plain password
         full_name=getattr(user_data, "full_name", None),
-        role=getattr(user_data, "role", "user")
+        role=getattr(user_data, "role", "user"),
+        is_active=True
     )
     db.add(db_user)
     db.commit()
@@ -35,11 +34,28 @@ def create_user(db: Session, user_data):
 
 def authenticate_user(db: Session, username: str, password: str):
     user = get_user_by_username(db, username)
+
     if not user:
         return None
-    if not verify_password(password, user.hashed_password):
+
+    if user.password != password:   # plain comparison
         return None
+
+    if not user.is_active:
+        return None
+
     return user
+
+def update_user(db: Session, db_user: User, user_data: dict):
+    for key, value in user_data.dict(exclude_unset=True).items():
+        setattr(db_user, key, value)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
+def delete_user(db: Session, db_user: User):
+    db.delete(db_user)
+    db.commit()
 
 
 # ========================
@@ -93,29 +109,8 @@ def delete_location(db: Session, location_id: int):
 # Asset CRUD Operations
 # ========================
 
-def get_asset_by_id(db: Session, asset_id: int):
-    return db.query(Asset).filter(Asset.id == asset_id).first()
-
-
-def get_asset_by_asset_id(db: Session, asset_id: str):
-    return db.query(Asset).filter(Asset.asset_id == asset_id).first()
-
-
 def get_all_assets(db: Session):
     return db.query(Asset).all()
-
-
-def get_assets_by_location(db: Session, location_id: int):
-    return db.query(Asset).filter(Asset.location_id == location_id).all()
-
-
-def get_assets_by_category(db: Session, category: str):
-    return db.query(Asset).filter(Asset.category == category).all()
-
-
-def get_assets_by_status(db: Session, status: str):
-    return db.query(Asset).filter(Asset.status == status).all()
-
 
 def create_asset(db: Session, asset_data):
     db_asset = Asset(

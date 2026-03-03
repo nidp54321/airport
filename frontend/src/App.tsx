@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./Login";
 import Dashboard from "./Dashboard";
 import AllAssets from "./pages/AllAssets";
@@ -6,39 +6,36 @@ import Locations from "./pages/Locations";
 import Maintenance from "./pages/Maintenance";
 import Reports from "./pages/Reports";
 import UserManagement from "./pages/UserManagement";
+import {useState} from "react";
 
 export default function App() {
-    const token = localStorage.getItem("token");
-
+    const [user, setUser] = useState(
+        JSON.parse(localStorage.getItem("user") || "null")
+    );
     return (
         <Routes>
+            {/* Login Route */}
             <Route
                 path="/"
-                element={token ? <Navigate to="/dashboard" /> : <Login />}
+                element={<Login setUser={setUser} />}
             />
+
+            {/* Protected Routes */}
+            {user && (
+                <>
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/assets" element={<AllAssets />} />
+                    <Route path="/locations" element={<Locations />} />
+                    <Route path="/maintenance" element={<Maintenance />} />
+                    <Route path="/reports" element={<Reports />} />
+                    <Route path="/users" element={<UserManagement />} />
+                </>
+            )}
+
+            {/* Catch all */}
             <Route
-                path="/dashboard"
-                element={token ? <Dashboard /> : <Navigate to="/" />}
-            />
-            <Route
-                path="/assets"
-                element={token ? <AllAssets /> : <Navigate to="/" />}
-            />
-            <Route
-                path="/locations"
-                element={token ? <Locations /> : <Navigate to="/" />}
-            />
-            <Route
-                path="/maintenance"
-                element={token ? <Maintenance /> : <Navigate to="/" />}
-            />
-            <Route
-                path="/reports"
-                element={token ? <Reports /> : <Navigate to="/" />}
-            />
-            <Route
-                path="/users"
-                element={token ? <UserManagement /> : <Navigate to="/" />}
+                path="*"
+                element={<Navigate to={user ? "/dashboard" : "/"} />}
             />
         </Routes>
     );

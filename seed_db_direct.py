@@ -4,84 +4,106 @@ Direct database seeding script - inserts data directly into database
 
 from app.database import SessionLocal, engine
 from app.models import Base, User, Location, Asset, Maintenance, Report
-from app.auth import get_password_hash
 from datetime import datetime, timedelta
 import json
 
 # Create tables
 Base.metadata.create_all(bind=engine)
 
-db = SessionLocal()
-
 def seed_database():
-    print("\n🌱 Seeding Database Directly...\n")
-    
-    try:
-        # 1. Create test user with admin role
-        print("1️⃣  Creating test user...")
-        existing_user = db.query(User).filter(User.username == "testuser").first()
-        if not existing_user:
-            test_user = User(
-                username="testuser",
-                email="testuser@airport.com",
-                full_name="Test Admin User",
-                hashed_password=get_password_hash("testpass123"),
-                role="admin",
-                is_active=True
-            )
-            db.add(test_user)
-            db.commit()
-            print("✓ Test user created (admin)")
-        else:
-            # Update existing user to be admin
-            existing_user.role = "admin"
-            db.commit()
-            print("✓ Test user updated to admin role")
+    print("\n Seeding Database Directly...\n")
 
-        # 2. Create locations
-        print("\n2️⃣  Creating locations...")
-        locations_data = [
+    db = SessionLocal()
+
+    try:
+        # =========================
+        # 1. Create / Get Users
+        # =========================
+        print("Creating users...")
+
+        users_data = [
             {
-                "name": "Terminal 1",
-                "location_type": "Terminal",
-                "capacity": 5000,
-                "description": "International Terminal"
+                "username": "testuser",
+                "email": "testuser@airport.com",
+                "full_name": "Test Admin User",
+                "password": "testpass123",
+                "role": "admin",
+                "is_active": True
             },
             {
-                "name": "Terminal 2",
-                "location_type": "Terminal",
-                "capacity": 3500,
-                "description": "Domestic Terminal"
+                "username": "manager1",
+                "email": "manager1@airport.com",
+                "full_name": "Operations Manager",
+                "password": "manager123",
+                "role": "manager",
+                "is_active": True
             },
             {
-                "name": "Runway 1",
-                "location_type": "Runway",
-                "capacity": None,
-                "description": "Main runway for takeoff and landing"
+                "username": "tech1",
+                "email": "tech1@airport.com",
+                "full_name": "Maintenance Technician",
+                "password": "tech123",
+                "role": "technician",
+                "is_active": True
             },
             {
-                "name": "Cargo Terminal",
-                "location_type": "Cargo",
-                "capacity": 2000,
-                "description": "Freight handling facility"
+                "username": "viewer1",
+                "email": "viewer1@airport.com",
+                "full_name": "Report Viewer",
+                "password": "viewer123",
+                "role": "viewer",
+                "is_active": True
             }
         ]
-        
+
+        user_ids = {}
+
+        for user_data in users_data:
+            user = db.query(User).filter(User.username == user_data["username"]).first()
+
+            if not user:
+                user = User(**user_data)
+                db.add(user)
+                db.flush()
+                print(f"Created user: {user.username} ({user.role})")
+            else:
+                user.role = user_data["role"]
+                print(f"Updated user: {user.username} ({user.role})")
+
+            user_ids[user.username] = user.id
+
+        # Default admin for asset creation
+        admin_user_id = user_ids["testuser"]
+        # =========================
+        # 2. Locations
+        # =========================
+        print("\nCreating locations...")
+
+        locations_data = [
+            {"name": "Terminal 1", "location_type": "Terminal", "capacity": 5000, "description": "International Terminal"},
+            {"name": "Terminal 2", "location_type": "Terminal", "capacity": 3500, "description": "Domestic Terminal"},
+            {"name": "Runway 1", "location_type": "Runway", "capacity": None, "description": "Main runway for takeoff and landing"},
+            {"name": "Cargo Terminal", "location_type": "Cargo", "capacity": 2000, "description": "Freight handling facility"},
+        ]
+
         location_ids = []
+
         for loc_data in locations_data:
-            existing = db.query(Location).filter(Location.name == loc_data["name"]).first()
-            if not existing:
+            location = db.query(Location).filter(Location.name == loc_data["name"]).first()
+            if not location:
                 location = Location(**loc_data)
                 db.add(location)
-                db.commit()
-                location_ids.append(location.id)
-                print(f"✓ Created location: {loc_data['name']}")
+                db.flush()
+                print(f"Created location: {loc_data['name']}")
             else:
-                location_ids.append(existing.id)
-                print(f"✓ Location exists: {loc_data['name']}")
+                print(f"Location exists: {loc_data['name']}")
+            location_ids.append(location.id)
 
-        # 3. Create assets
-        print("\n3️⃣  Creating assets...")
+        # =========================
+        # 3. Assets
+        # =========================
+        print("\nCreating assets...")
+
         assets_data = [
             {
                 "asset_id": "AST-001",
@@ -124,23 +146,27 @@ def seed_database():
                 "serial_number": "CL-2024-004"
             }
         ]
-        
-        asset_ids = []
-        for asset_data in assets_data:
-            existing = db.query(Asset).filter(Asset.asset_id == asset_data["asset_id"]).first()
-            if not existing:
-                asset = Asset(**asset_data, created_by=existing_user.id if existing_user else None)
-                db.add(asset)
-                db.commit()
-                asset_ids.append(asset.id)
-                print(f"✓ Created asset: {asset_data['asset_name']}")
-            else:
-                asset_ids.append(existing.id)
-                print(f"✓ Asset exists: {asset_data['asset_name']}")
 
-        # 4. Create maintenance records
-        print("\n4️⃣  Creating maintenance records...")
+        asset_ids = []
+
+        for asset_data in assets_data:
+            asset = db.query(Asset).filter(Asset.asset_id == asset_data["asset_id"]).first()
+            if not asset:
+                asset = Asset(**asset_data, created_by=user_id)
+                db.add(asset)
+                db.flush()
+                print(f"Created asset: {asset_data['asset_name']}")
+            else:
+                print(f"Asset exists: {asset_data['asset_name']}")
+            asset_ids.append(asset.id)
+
+        # =========================
+        # 4. Maintenance
+        # =========================
+        print("\nCreating maintenance records...")
+
         today = datetime.now()
+
         maintenance_data = [
             {
                 "maintenance_id": "MNT-001",
@@ -171,19 +197,24 @@ def seed_database():
                 "actual_cost": 1200.00
             }
         ]
-        
-        for maint_data in maintenance_data:
-            existing = db.query(Maintenance).filter(Maintenance.maintenance_id == maint_data["maintenance_id"]).first()
-            if not existing:
-                maintenance = Maintenance(**maint_data, assigned_to=existing_user.id if existing_user else None)
-                db.add(maintenance)
-                db.commit()
-                print(f"✓ Created maintenance: {maint_data['maintenance_id']}")
-            else:
-                print(f"✓ Maintenance exists: {maint_data['maintenance_id']}")
 
-        # 5. Create reports
-        print("\n5️⃣  Creating reports...")
+        for maint_data in maintenance_data:
+            maintenance = db.query(Maintenance).filter(
+                Maintenance.maintenance_id == maint_data["maintenance_id"]
+            ).first()
+
+            if not maintenance:
+                maintenance = Maintenance(**maint_data, assigned_to=user_id)
+                db.add(maintenance)
+                print(f"Created maintenance: {maint_data['maintenance_id']}")
+            else:
+                print(f"Maintenance exists: {maint_data['maintenance_id']}")
+
+        # =========================
+        # 5. Reports
+        # =========================
+        print("\nCreating reports...")
+
         reports_data = [
             {
                 "report_id": "RPT-001",
@@ -197,63 +228,45 @@ def seed_database():
                     "maintenance": 1,
                     "utilization_rate": "87%"
                 })
-            },
-            {
-                "report_id": "RPT-002",
-                "report_name": "Maintenance Schedule Report",
-                "report_type": "Operations",
-                "description": "Upcoming maintenance schedule",
-                "is_public": False,
-                "data_json": json.dumps({
-                    "scheduled": 2,
-                    "in_progress": 1,
-                    "total_cost": 2300.00
-                })
-            },
-            {
-                "report_id": "RPT-003",
-                "report_name": "System Performance Report",
-                "report_type": "Performance",
-                "description": "System health and performance metrics",
-                "is_public": True,
-                "data_json": json.dumps({
-                    "uptime": "99.8%",
-                    "response_time": "45ms",
-                    "error_rate": "0.2%"
-                })
             }
         ]
-        
+
         for report_data in reports_data:
-            existing = db.query(Report).filter(Report.report_id == report_data["report_id"]).first()
-            if not existing:
-                report = Report(**report_data, generated_by=existing_user.id if existing_user else None)
+            report = db.query(Report).filter(
+                Report.report_id == report_data["report_id"]
+            ).first()
+
+            if not report:
+                report = Report(**report_data, generated_by=user_id)
                 db.add(report)
-                db.commit()
-                print(f"✓ Created report: {report_data['report_name']}")
+                print(f"Created report: {report_data['report_name']}")
             else:
-                print(f"✓ Report exists: {report_data['report_name']}")
+                print(f"Report exists: {report_data['report_name']}")
 
-        # 6. Verify
-        print("\n6️⃣  Database Summary:")
-        print(f"  • Locations: {db.query(Location).count()}")
-        print(f"  • Assets: {db.query(Asset).count()}")
-        print(f"  • Maintenance Records: {db.query(Maintenance).count()}")
-        print(f"  • Reports: {db.query(Report).count()}")
-        print(f"  • Users: {db.query(User).count()}")
+        # =========================
+        # Commit Everything Once
+        # =========================
+        db.commit()
 
-        print("\n✅ Database seeding completed successfully!")
+        print("\n Database Summary:")
+        print(f"Locations: {db.query(Location).count()}")
+        print(f"Assets: {db.query(Asset).count()}")
+        print(f"Maintenance Records: {db.query(Maintenance).count()}")
+        print(f"Reports: {db.query(Report).count()}")
+        print(f"Users: {db.query(User).count()}")
+
+        print("\n Database seeding completed successfully!")
         print("\nTest Credentials:")
-        print("  Username: testuser")
-        print("  Password: testpass123")
-        print("  Role: admin")
+        print("Username: testuser")
+        print("Password: testpass123")
+        print("Role: admin")
 
     except Exception as e:
-        print(f"\n❌ Error during seeding: {e}")
         db.rollback()
+        print(f"\n Error during seeding: {e}")
     finally:
         db.close()
 
+
 if __name__ == "__main__":
     seed_database()
-

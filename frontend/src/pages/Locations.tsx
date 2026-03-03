@@ -1,9 +1,9 @@
-import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import "../styles.css";
+import NavigationPanel from "../components/NavigationPanel.tsx";
 
-const API = "http://127.0.0.1:8000";
+const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
 interface Location {
     id: number;
@@ -14,11 +14,9 @@ interface Location {
 }
 
 export default function Locations() {
-    const navigate = useNavigate();
     const [locations, setLocations] = useState<Location[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-    const token = localStorage.getItem("token");
 
     useEffect(() => {
         fetchLocations();
@@ -28,9 +26,7 @@ export default function Locations() {
         try {
             setLoading(true);
             setError("");
-            const response = await axios.get(`${API}/locations/`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const response = await axios.get(`${API}/locations/`);
             setLocations(response.data);
         } catch (err) {
             console.error("Error fetching locations:", err);
@@ -40,30 +36,10 @@ export default function Locations() {
         }
     };
 
-    const logout = () => {
-        localStorage.removeItem("token");
-        navigate("/");
-    };
 
     return (
         <div className="dashboard-container">
-            {/* Sidebar */}
-            <div className="dashboard-sidebar">
-                <h3>Airport Assets</h3>
-
-                <p onClick={() => navigate("/dashboard")}>Dashboard</p>
-                <p onClick={() => navigate("/assets")}>All Assets</p>
-                <p><strong>Locations</strong></p>
-                <p onClick={() => navigate("/maintenance")}>Maintenance</p>
-                <p onClick={() => navigate("/reports")}>Reports</p>
-                <p onClick={() => navigate("/users")}>User Management</p>
-
-                <button className="dashboard-logout-btn" onClick={logout}>
-                    Logout
-                </button>
-            </div>
-
-            {/* Main Content */}
+            <NavigationPanel />
             <div className="dashboard-main">
                 <h1>Locations</h1>
                 <p>Manage airport locations and terminals</p>
@@ -110,4 +86,3 @@ export default function Locations() {
         </div>
     );
 }
-

@@ -3,9 +3,9 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./styles.css";
 
-const API = "http://127.0.0.1:8000";
+const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
-export default function Login() {
+export default function Login({ setUser }: { setUser: (user: any) => void }) {
     const navigate = useNavigate();
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
@@ -13,15 +13,17 @@ export default function Login() {
 
     const login = async () => {
         try {
-            const formData = new URLSearchParams();
-            formData.append("username", username);
-            formData.append("password", password);
+            const res = await axios.post(`${API}/auth/login`, {
+                username,
+                password
+            });
 
-            const res = await axios.post(`${API}/auth/token`, formData);
+            if (res.data && res.data.user) {
+                localStorage.setItem("user", JSON.stringify(res.data.user));
+                setUser(res.data.user);
+            }
 
-            localStorage.setItem("token", res.data.access_token);
-
-            navigate("/dashboard"); // 🔥 redirect after login
+            navigate("/dashboard");
         } catch (err: any) {
             setError("Invalid credentials");
         }
