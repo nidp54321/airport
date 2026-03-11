@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from app.models import User, Asset, Location, Maintenance, Report
+from models import User, Asset, Location, Maintenance, Report
 
 # ========================
 # User CRUD Operations

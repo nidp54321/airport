@@ -2,8 +2,8 @@
 Direct database seeding script - inserts data directly into database
 """
 
-from app.database import SessionLocal, engine
-from app.models import Base, User, Location, Asset, Maintenance, Report
+from database import SessionLocal, engine
+from models import Base, User, Location, Asset, Maintenance, Report
 from datetime import datetime, timedelta
 import json
 
@@ -152,7 +152,7 @@ def seed_database():
         for asset_data in assets_data:
             asset = db.query(Asset).filter(Asset.asset_id == asset_data["asset_id"]).first()
             if not asset:
-                asset = Asset(**asset_data, created_by=user_id)
+                asset = Asset(**asset_data, created_by=admin_user_id)
                 db.add(asset)
                 db.flush()
                 print(f"Created asset: {asset_data['asset_name']}")
@@ -204,7 +204,7 @@ def seed_database():
             ).first()
 
             if not maintenance:
-                maintenance = Maintenance(**maint_data, assigned_to=user_id)
+                maintenance = Maintenance(**maint_data, assigned_to=admin_user_id)
                 db.add(maintenance)
                 print(f"Created maintenance: {maint_data['maintenance_id']}")
             else:
@@ -237,7 +237,7 @@ def seed_database():
             ).first()
 
             if not report:
-                report = Report(**report_data, generated_by=user_id)
+                report = Report(**report_data, generated_by=admin_user_id)
                 db.add(report)
                 print(f"Created report: {report_data['report_name']}")
             else:

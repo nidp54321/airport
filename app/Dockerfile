@@ -18,4 +18,4 @@ COPY . .
 EXPOSE 8000
 
 # Command to run the application with Uvicorn
-CMD ["uvicorn", "DFW.app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["sh", "-c", "python seed_db_direct.py && uvicorn main:app --host 0.0.0.0 --port 8000", "--reload"]

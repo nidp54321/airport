@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.database import get_db
-from app.schemas import ReportOut, ReportCreate, ReportUpdate
-from app.crud import (
+from database import get_db
+from schemas import ReportOut, ReportCreate, ReportUpdate
+from crud import (
     get_all_reports,
     get_report_by_id,
     get_reports_by_type,

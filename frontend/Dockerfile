@@ -14,10 +14,10 @@ RUN npm install
 COPY . .
 
 # Build the app with environment variable
-ARG REACT_APP_API_URL
-ENV REACT_APP_API_URL=$REACT_APP_API_URL
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
 
-RUN echo "Building app with API URL: $REACT_APP_API_URL"
+RUN echo "Building app with API URL: VITE_API_URL"
 RUN npm run build
 
 # 2. Production stage

@@ -9,18 +9,20 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./app/test.db:/app/test.db
+      - ./app/data:/app/data
     environment:
-      - DATABASE_URL=sqlite:///./test.db
+      - DATABASE_URL=sqlite:///./data/test.db
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://host.docker.internal:8000
     container_name: dfw-frontend
     ports:
       - "3000:80"
     environment:
-      - REACT_APP_API_URL=http://backend:8000
+      - VITE_API_URL=http://backend:8000
     depends_on:
       - backend
